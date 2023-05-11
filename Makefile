@@ -8,6 +8,9 @@ all:
 	make add-autosuggestions
 	make add-zoxide
 
+update:
+	sudo apt update
+
 add-path:
 	echo 'export PYENV_ROOT="${HOME}/.pyenv"' >> ~/.zshrc
 	echo 'export PATH="$${PYENV_ROOT}/shims:$${PYENV_ROOT}/bin:$${HOME}/.local/bin:$$PATH"' >> ~/.zshrc
@@ -17,10 +20,9 @@ add-fonts:
 	&& sudo apt install -y --no-install-recommends \
 	unzip \
 	fontconfig \
-	&& mkdir -p ~/.fonts \
-	&& cd ~/.fonts \
-	&& wget https://github.com/ryanoasis/nerd-fonts/releases/download/v2.2.2/FiraCode.zip \
-	&& unzip FiraCode.zip \
+	&& cd /usr/share/fonts \
+	&& sudo wget https://github.com/ryanoasis/nerd-fonts/releases/download/v2.2.2/FiraCode.zip \
+	&& sudo unzip -o FiraCode.zip \
 	&& fc-cache -f -v \
 	&& echo "fontconfig installed"
 
@@ -45,6 +47,10 @@ $(AUTOSUGGESTIONS_DIR):
 add-zoxide:
 	curl -sS https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | bash \
 	&& echo 'eval "$$(zoxide init zsh)"' >> ~/.zshrc
+
+add-exa:
+	sudo apt install exa \
+	&& echo "alias lsd='exa -h --icons --long --sort=mod'" >> ~/.zshrc
 
 lint:
 	poetry run flake8 src
