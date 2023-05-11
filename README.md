@@ -1,3 +1,4 @@
+```
 ├── README.md       <- this file
 ├── data            <- store your data here
 │   ├── final         <- results
@@ -13,6 +14,7 @@
 │   ├── img           <- image folder for report
 │   └── report.qmd    <- empty reportfile. You can use .qmd or .tex
 └── src
+```
 
 This is a setup for the practical assignment for the Machine Learning course. I created the template with https://github.com/raoulg/DsTemplate
 
