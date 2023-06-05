@@ -1,7 +1,7 @@
 import random
 from src import datasets
 from src.models import rnn_models, metrics, train_model
-from src.settings import SearchSpace, SearchSpaceAttention, SearchSpaceTransformer, TrainerSettings, presets
+from src.settings import SearchSpace, SearchSpaceAttention, SearchSpaceTransformer, SearchSpaceGRUTransformer, TrainerSettings, presets
 from pathlib import Path
 from ray.tune import JupyterNotebookReporter
 from ray import tune
@@ -46,7 +46,7 @@ def train(config: Dict, model_class, epochs, model_type, checkpoint_dir=None):
         logdir=presets.logdir,
         train_steps=len(trainstreamer),
         valid_steps=len(teststreamer),
-        tunewriter=["ray", "mlflow"],
+        tunewriter=["ray", "mlflow", "tensorboard"],
         scheduler_kwargs={"factor": 0.5, "patience": 5},
         earlystop_kwargs=None,
     )
@@ -58,7 +58,7 @@ def train(config: Dict, model_class, epochs, model_type, checkpoint_dir=None):
     # This is why we set earlystop_kwargs=None, because we
     # are handing over this control to ray.
 
-    if model_type == "Transformer":
+    if model_type == "Transformer" or model_type == "GRUTransformer":
         trainer = train_model.TransformerTrainer(
             model=model,
             settings=trainersettings,
@@ -84,13 +84,13 @@ def train(config: Dict, model_class, epochs, model_type, checkpoint_dir=None):
 # Define argument parser
 parser = argparse.ArgumentParser(description='Model Type for Hyperparameter Tuning')
 parser.add_argument('--model_type', type=str, required=True, 
-                    help='Type of model to use for hyperparameter tuning. Options: "GRU", "LSTM", "AttentionGRU", "Transformer"')
+                    help='Type of model to use for hyperparameter tuning. Options: "GRU", "LSTM", "GRUAttention", "Transformer", "GRUTransformer"')
 parser.add_argument('--epochs', type=int, required=False, default=50,
                     help='Number of epochs for training.')
 args = parser.parse_args()
 
 if __name__ == "__main__":
-    print("aa")
+    print("a")
     model_type = args.model_type
     epochs = args.epochs
 
@@ -131,7 +131,7 @@ if __name__ == "__main__":
             model_class = rnn_models.LSTMmodel
             mlflow.set_tag("model", "LSTMmodel")
 
-        elif model_type == "AttentionGRU":
+        elif model_type == "GRUAttention":
             config = SearchSpaceAttention(
                 input_size=13,
                 output_size=20, 
@@ -144,17 +144,16 @@ if __name__ == "__main__":
                 data_dir=presets.datadir.resolve(),
                 use_mean=False
             )
-            model_class = rnn_models.AttentionGRUAarabic
-            mlflow.set_tag("model", "AttentionGRU")
+            model_class = rnn_models.GRUAttentionAarabic
+            mlflow.set_tag("model", "GRUAttention")
 
         elif model_type == "Transformer":
             # config = SearchSpaceTransformer(
             #     input_size=13,
             #     output_size=20, 
-            #     #hidden_size=13*20,#tune.randint(256, 1024),
-            #     hidden_size=256, 
+            #     hidden_size=13, 
             #     num_heads=13,
-            #     dropout=tune.uniform(0.0, 0.5),   
+            #     dropout=tune.uniform(0.0, 0.3),   
             #     num_layers=tune.randint(2, 8),     
             #     tune_dir=Path("models/ray").resolve(),
             #     data_dir=presets.datadir.resolve(),
@@ -162,22 +161,71 @@ if __name__ == "__main__":
             #     num_transformer_layers = tune.randint(4, 8)
             # )
             config = SearchSpaceTransformer(
-                input_size=13,
-                output_size=20,
-                hidden_size=20*13,  # Adjust the hidden size according to your needs
-                num_heads=13,  # Adjust the number of heads according to your needs
-                dropout=tune.uniform(0.0, 0.5), # Adjust the dropout rate according to your needs
-                num_layers=4,  # Adjust the number of transformer layers according to your needs
                 tune_dir=Path("models/ray").resolve(),
                 data_dir=presets.datadir.resolve(),
-                use_mean=False,
-                num_transformer_layers=4  # Adjust the number of transformer layers according to your needs
+
+                # GRU
+                input_size=13,
+                dropout_gru=tune.uniform(0.0, 0.3),   
+                num_layers=tune.randint(2, 6), 
+                hidden_size=13,  
+
+                # TransformerEncoderLayer
+                num_heads=13,
+
+                # TransformerEncoder
+                num_transformer_layers = tune.randint(2, 6),
+
+                # Linear
+                output_size=20,     
+
+                # Forward
+                use_mean=False     
             )
             model_class = rnn_models.TransformerAarabic
             mlflow.set_tag("model", "Transformer")
 
+        elif model_type == "GRUTransformer":
+            config = SearchSpaceGRUTransformer(
+                # input_size=13,
+                # output_size=20,            
+                # hidden_size=13, 
+                # num_heads=13,
+                # dropout=tune.uniform(0.0, 0.3),  
+                # dropout_gru=tune.uniform(0.0, 0.3),   
+                # tune_dir=Path("models/ray").resolve(),
+                # data_dir=presets.datadir.resolve(),
+                # num_layers=tune.randint(2, 6),     
+                # num_transformer_layers = tune.randint(2, 6),
+                # use_mean=False
+
+                tune_dir=Path("models/ray").resolve(),
+                data_dir=presets.datadir.resolve(),
+
+                # GRU
+                input_size=13,
+                dropout_gru=tune.uniform(0.0, 0.3),   
+                num_layers=tune.randint(2, 6), 
+                hidden_sizes=13,        
+
+                # TransformerEncoderLayer
+                num_heads=13,
+                dropout=tune.uniform(0.0, 0.3),   
+
+                # TransformerEncoder
+                num_transformer_layers = tune.randint(2, 6),
+
+                # Linear
+                output_size=20,     
+
+                # Forward
+                use_mean=False     
+            )
+            model_class = rnn_models.GRUTransformerAarabic
+            mlflow.set_tag("model", "GRUTransformer")
+
         else:
-            raise ValueError(f"Invalid model_type {model_type}. Choose from 'GRU', 'LSTM', 'AttentionGRU'")
+            raise ValueError(f"Invalid model_type {model_type}. Choose from 'GRU', 'LSTM', 'GRUAttention, 'GRUTransformer'")
 
         # Log hyperparameters to MLflow
         mlflow.log_param("datadir", f"{presets.datadir.resolve()}")

@@ -37,7 +37,7 @@ Each line on the data base represents 13 MFCCs coefficients in the increasing or
 
     st.markdown('''### Pipeline''')
     st.text('''
-AttentionGRUAarabic(
+AttentionAarabic(
   (rnn): GRU(((13, 120, num_layers=4, batch_first=True, dropout=0.02319741641270231)
   (attention): MultiheadAttention(
     (out_proj): NonDynamicallyQuantizableLinear(in_features=120, out_features=120, bias=True)

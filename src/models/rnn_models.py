@@ -104,7 +104,7 @@ class LSTMmodel(nn.Module):
         return yhat
     
 
-class AttentionGRU(nn.Module):
+class GRUAttention(nn.Module):
     def __init__(
         self,
         config: Dict,
@@ -133,7 +133,7 @@ class AttentionGRU(nn.Module):
         return yhat
 
 
-class AttentionGRUAarabic(nn.Module):
+class AttentionAarabic(nn.Module):
     def __init__(
         self,
         config: Dict,
@@ -174,7 +174,7 @@ class TransformerAarabic(nn.Module):
         self,
         config: Dict,
     ) -> None:
-        super().__init__()
+        super().__init__()        
         self.config = config
 
         self.encoder_layer = nn.TransformerEncoderLayer(
@@ -196,7 +196,53 @@ class TransformerAarabic(nn.Module):
         )
 
     def forward(self, x: Tensor) -> Tensor:
-        print("X-SHAPEx", x.shape)
+        x = self.transformer_encoder(x)
+
+        if self.config["use_mean"]:
+            last_step = x.mean(dim=1)  # Take the mean along the second axis (0-based indexing)
+        else:
+            last_step = x[:, -1, :]  # Take the last step
+
+        yhat = self.linear(last_step)
+        return yhat
+    
+
+class GRUTransformerAarabic(nn.Module):
+    def __init__(
+        self,
+        config: Dict,
+    ) -> None:
+        super().__init__()        
+        self.config = config
+
+        self.rnn = nn.GRU(
+            input_size=config["input_size"],
+            dropout=config["dropout_gru"],
+            num_layers=config["num_layers"],
+            batch_first=True,
+            hidden_size=config["hidden_sizes"],
+        )
+
+        self.encoder_layer = nn.TransformerEncoderLayer(
+            d_model=config["hidden_sizes"], 
+            nhead=config["num_heads"],
+            dropout=config["dropout"],
+            activation='relu',
+            batch_first=True
+        )
+
+        self.transformer_encoder = nn.TransformerEncoder(
+            self.encoder_layer, 
+            num_layers=config["num_transformer_layers"]
+        )
+
+        self.linear = nn.Linear(
+            config["hidden_sizes"], 
+            config["output_size"]
+        )
+
+    def forward(self, x: Tensor) -> Tensor:
+        x, _ = self.rnn(x)
         x = self.transformer_encoder(x)
 
         if self.config["use_mean"]:

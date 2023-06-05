@@ -123,13 +123,21 @@ class SearchSpaceTransformer(SearchSpace):
     num_transformer_layers: Union[int, SAMPLE_INT] = tune.randint(4, 8)
 
 
+# this is what ray will use to create configs
+class SearchSpaceGRUTransformer(SearchSpace):
+    hidden_sizes: Union[int, SAMPLE_CATEGORICAL] = tune.choice([13, 26, 39]) 
+    num_heads: Union[int, SAMPLE_CATEGORICAL] = tune.choice([13, 26, 39]) 
+    num_transformer_layers: Union[int, SAMPLE_INT] = tune.randint(4, 8)
+    dropout_gru: Union[float, SAMPLE_FLOAT] = tune.uniform(0.0, 0.3)
+
+
 class BaseSettings(BaseModel):
     data_dir: Path
 
 
 cwd = Path(__file__).parent
 cwd = (cwd / "../").resolve()
-
+print('a')
 
 class GeneralSettings(BaseSettings):
     data_dir = cwd / "data/raw"
