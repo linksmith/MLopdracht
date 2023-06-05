@@ -1,21 +1,30 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/python
 {
-	"name": "poetry3-poetry-pyenv",
-	"build": {
-		"dockerfile": "Dockerfile"
-	},
-
-	"customizations": {
-        "vscode": {
-            "extensions":["ms-python.python", "ms-toolsai.jupyter", "mhutchie.git-graph"]
-            }
-		},
+	"name": "Python 3 - Opdracht",
+	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
+	"image": "mcr.microsoft.com/devcontainers/python:0-3.9",
+	"runArgs": [
+		"--shm-size=4gb"
+	],
 	"features": {
 		"ghcr.io/devcontainers/features/common-utils:2": {
 			"installZsh": true,
 			"configureZshAsDefaultShell": true,
 			"installOhMyZsh": true
+		},
+		"ghcr.io/devcontainers-contrib/features/poetry:2": {}
+	},
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"ms-python.python",
+				"ms-toolsai.jupyter",
+				"mhutchie.git-graph"
+			],
+			"settings": {
+				"python.venvPath": "/home/vscode/.cache/pypoetry/virtualenvs"
+			}
 		}
 	}
-	// 👇 Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
-	// "remoteUser": "root"
 }

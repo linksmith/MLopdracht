@@ -1,0 +1,26 @@
+// TransformerAarabic Model
+digraph {
+	"" [label="AttentionGRUAarabic(
+  (rnn): GRU(13, 120, num_layers=4, batch_first=True, dropout=0.02319741641270231)
+  (attention): MultiheadAttention(
+    (out_proj): NonDynamicallyQuantizableLinear(in_features=120, out_features=120, bias=True)
+  )
+  (linear): Linear(in_features=120, out_features=20, bias=True)
+)"]
+	rnn [label="GRU(13, 120, num_layers=4, batch_first=True, dropout=0.02319741641270231)"]
+	attention [label="MultiheadAttention(
+  (out_proj): NonDynamicallyQuantizableLinear(in_features=120, out_features=120, bias=True)
+)"]
+	"attention.out_proj" [label="NonDynamicallyQuantizableLinear(in_features=120, out_features=120, bias=True)"]
+	linear [label="Linear(in_features=120, out_features=20, bias=True)"]
+	"" -> ""
+	"" -> rnn
+	"" -> attention
+	"" -> "attention.out_proj"
+	"" -> linear
+	rnn -> ""
+	attention -> ""
+	attention -> out_proj
+	"attention.out_proj" -> ""
+	linear -> ""
+}
