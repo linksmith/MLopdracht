@@ -3,3 +3,4 @@ data/raw/*
 /models
 /logs
 /dev/notebooks/models/ray
+/dev/notebooks/models/ray2

@@ -95,7 +95,7 @@ def get_lstm_search_space():
         hidden_size=tune.randint(16, 128),
         dropout=tune.uniform(0.0, 0.3),   
         num_layers=tune.randint(2, 5),     
-        tune_dir=Path("models/ray").resolve(),
+        tune_dir=Path("models/ray2").resolve(),
         data_dir=presets.datadir.resolve(),
         use_mean=tune.choice([True, False])
     )
@@ -108,7 +108,7 @@ def get_gru_search_space():
         hidden_size=tune.randint(16, 128),
         dropout=tune.uniform(0.0, 0.3),   
         num_layers=tune.randint(2, 5),     
-        tune_dir=Path("models/ray").resolve(),
+        tune_dir=Path("models/ray2").resolve(),
         data_dir=presets.datadir.resolve(),
         use_mean=tune.choice([True, False])
     )
@@ -120,10 +120,11 @@ def get_attention_search_space():
         output_size=20, 
         # size_and_heads=tune.choice(SearchSpaceAttention.get_size_and_heads(4, 120, 4)),
         size_and_heads='120_30',
+
         dropout=tune.uniform(0.0, 0.3),  
         dropout_attention=tune.uniform(0.0, 0.3),  
         num_layers=4,     
-        tune_dir=Path("models/ray").resolve(),
+        tune_dir=Path("models/ray2").resolve(),
         data_dir=presets.datadir.resolve(),
         use_mean=False
     )
@@ -136,23 +137,23 @@ def get_transformer_search_space():
     #     num_heads=13,
     #     dropout=tune.uniform(0.0, 0.3),   
     #     num_layers=tune.randint(2, 8),     
-    #     tune_dir=Path("models/ray").resolve(),
+    #     tune_dir=Path("models/ray2").resolve(),
     #     data_dir=presets.datadir.resolve(),
     #     use_mean=False,
     #     num_transformer_layers = tune.randint(4, 8)
     # )
     return SearchSpaceTransformer(
-        tune_dir=Path("models/ray").resolve(),
+        tune_dir=Path("models/ray2").resolve(),
         data_dir=presets.datadir.resolve(),
 
         # GRU
         input_size=13,
         dropout_gru=tune.uniform(0.0, 0.3),   
         num_layers=tune.randint(2, 6), 
-        hidden_size=13,  
+        hidden_size=128,  
 
         # TransformerEncoderLayer
-        num_heads=13,
+        num_heads=4,
 
         # TransformerEncoder
         num_transformer_layers = tune.randint(2, 6),
@@ -166,7 +167,7 @@ def get_transformer_search_space():
 
 def get_gru_transformer_search_space():
     return SearchSpaceGRUTransformer(
-        tune_dir=Path("models/ray").resolve(),
+        tune_dir=Path("models/ray2").resolve(),
         data_dir=presets.datadir.resolve(),
 
         # GRU
@@ -224,14 +225,14 @@ args = parser.parse_args()
 
 
 if __name__ == "__main__":
-    print("hack to refresh python cache: 002")
+    print("hack to refresh python cache: 007")
     model_type = args.model_type
     epochs = args.epochs
 
     init_mlflow()
 
     with mlflow.start_run():     
-        ray.init() # 6GB
+        ray.init()
 
         config, model_class = get_config_and_model_class(model_type)
 
