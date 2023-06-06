@@ -12,27 +12,23 @@ class GRU(nn.Module):
     ) -> None:
         super().__init__()
         self.config = config
+
         self.rnn = nn.GRU(
             input_size=config["input_size"],
             hidden_size=config["hidden_size"],
-            dropout=config["dropout"],
+            dropout=config["dropout_1"],
             batch_first=True,
             num_layers=config["num_layers"],
         )
+
         self.linear = nn.Linear(
             config["hidden_size"], 
             config["output_size"]
         )
 
-
     def forward(self, x: Tensor) -> Tensor:
         x, _ = self.rnn(x)
-
-        if self.config["use_mean"]:
-            last_step = x.mean(dim=1)  # Take the mean along the second axis (0-based indexing)
-        else:
-            last_step = x[:, -1, :]  # Take the last step
-
+        last_step = x[:, -1, :]  # Take the last step
         yhat = self.linear(last_step)
         return yhat
 
@@ -48,55 +44,19 @@ class LSTM(nn.Module):
         self.rnn = nn.LSTM(
             input_size=config["input_size"],
             hidden_size=config["hidden_size"],
-            dropout=config["dropout"],
+            dropout=config["dropout_1"],
             batch_first=True,
             num_layers=config["num_layers"],
         )
+
         self.linear = nn.Linear(
             config["hidden_size"], 
             config["output_size"]
         )
 
-
     def forward(self, x: Tensor) -> Tensor:
         x, _ = self.rnn(x)
-
-        if self.config["use_mean"]:
-            last_step = x.mean(dim=1)  # Take the mean along the second axis (0-based indexing)
-        else:
-            last_step = x[:, -1, :]  # Take the last step
-
-        yhat = self.linear(last_step)
-        return yhat
-
-
-class GRUAttention(nn.Module):
-    def __init__(
-        self,
-        config: Dict,
-    ) -> None:
-        super().__init__()
-        config["hidden_size"], config["num_heads"] = map(int, config['size_and_heads'].split('_'))
-        
-        self.rnn = nn.GRU(
-            input_size=config["input_size"],
-            hidden_size=config["hidden_size"],
-            dropout=config["dropout"],
-            batch_first=True,
-            num_layers=config["num_layers"],
-        )
-        self.attention = nn.MultiheadAttention(
-            embed_dim=config["hidden_size"],
-            num_heads=config["num_heads"],
-            dropout=config["dropout"],
-            batch_first=True,
-        )
-        self.linear = nn.Linear(config["hidden_size"], config["output_size"])
-
-    def forward(self, x: Tensor) -> Tensor:
-        x, _ = self.rnn(x)
-        x, _ = self.attention(x.clone(), x.clone(), x)
-        last_step = x[:, -1, :]
+        last_step = x[:, -1, :]  # Take the last step
         yhat = self.linear(last_step)
         return yhat
 
@@ -106,33 +66,59 @@ class Attention(nn.Module):
         self,
         config: Dict,
     ) -> None:
-        super().__init__()
-        config["hidden_size"], config["num_heads"] = map(int, config['size_and_heads'].split('_'))
+        super().__init__()        
         self.config = config
 
-        self.rnn = nn.GRU(
-            input_size=config["input_size"],
-            hidden_size=config["hidden_size"],
-            dropout=config["dropout"],
-            batch_first=True,
-            num_layers=config["num_layers"],
+        self.linear1 = nn.Linear(
+            config["input_size"], 
+            config["hidden_size"]
         )
+
         self.attention = nn.MultiheadAttention(
             embed_dim=config["hidden_size"],
             num_heads=config["num_heads"],
-            dropout=config["dropout_attention"],
+            dropout=config["dropout_1"],
             batch_first=True,
         )
+
+        self.linear2 = nn.Linear(config["hidden_size"], config["output_size"])
+
+    def forward(self, x: Tensor) -> Tensor:
+        x = self.linear1(x)
+        x, _ = self.attention(x.clone(), x.clone(), x)
+        last_step = x[:, -1, :]  # Take the last step
+        yhat = self.linear2(last_step)
+        return yhat
+
+
+class GRUAttention(nn.Module):
+    def __init__(
+        self,
+        config: Dict,
+    ) -> None:
+        super().__init__()
+        
+        self.rnn = nn.GRU(
+            input_size=config["input_size"],
+            dropout=config["dropout_1"],
+            num_layers=config["num_layers"],
+            hidden_size=config["hidden_size"],
+            batch_first=True,
+        )
+
+        self.attention = nn.MultiheadAttention(
+            embed_dim=config["hidden_size"],
+            num_heads=config["num_heads"],
+            dropout=config["dropout_2"],
+            batch_first=True,
+        )
+
         self.linear = nn.Linear(config["hidden_size"], config["output_size"])
 
     def forward(self, x: Tensor) -> Tensor:
         x, _ = self.rnn(x)
         x, _ = self.attention(x.clone(), x.clone(), x)
-        if self.config["use_mean"]:
-            last_step = x.mean(dim=1)  # Take the mean along the second axis (0-based indexing)
-        else:
-            last_step = x[:, -1, :]  # Take the last step
-
+        last_step = x[:, -1, :]
         yhat = self.linear(last_step)
         return yhat
 
@@ -150,17 +136,15 @@ class Transformer(nn.Module):
             config["hidden_size"]
         )
 
-        self.encoder_layer = nn.TransformerEncoderLayer(
-            d_model=config["hidden_size"], 
+        self.transformer = nn.Transformer(
+            d_model=config["hidden_size"],
             nhead=config["num_heads"],
-            dropout=config["dropout"],
+            num_encoder_layers=config["num_transformer_layers"],
+            num_decoder_layers=config["num_transformer_layers"],
+            dim_feedforward=config["hidden_size"] * config["dim_feedforward_multiplier"] ,
+            dropout=config["dropout_1"],
             activation='relu',
             batch_first=True
-        )
-
-        self.transformer_encoder = nn.TransformerEncoder(
-            self.encoder_layer, 
-            num_layers=config["num_transformer_layers"]
         )
 
         self.linear2 = nn.Linear(
@@ -170,12 +154,10 @@ class Transformer(nn.Module):
 
     def forward(self, x: Tensor) -> Tensor:
         x = self.linear1(x)
-        x = self.transformer_encoder(x)
-
-        if self.config["use_mean"]:
-            last_step = x.mean(dim=1)  # Take the mean along the second axis (0-based indexing)
-        else:
-            last_step = x[:, -1, :]  # Take the last step
+        batch_size, sequence_length, _ = x.size()
+        tgt = torch.zeros((batch_size, sequence_length, self.config["hidden_size"]), device=x.device)
+        x = self.transformer(x, tgt=tgt)
+        last_step = x[:, -1, :]  # Take the last step
 
         yhat = self.linear2(last_step)
         return yhat
@@ -191,82 +173,33 @@ class GRUTransformer(nn.Module):
 
         self.rnn = nn.GRU(
             input_size=config["input_size"],
-            dropout=config["dropout_gru"],
+            dropout=config["dropout_1"],
             num_layers=config["num_layers"],
+            hidden_size=config["hidden_size"],
             batch_first=True,
-            hidden_size=config["hidden_sizes"],
         )
 
-        self.encoder_layer = nn.TransformerEncoderLayer(
-            d_model=config["hidden_sizes"], 
+        self.transformer = nn.Transformer(
+            d_model=config["hidden_size"],
             nhead=config["num_heads"],
-            dropout=config["dropout"],
+            num_encoder_layers=config["num_transformer_layers"],
+            num_decoder_layers=config["num_transformer_layers"],
+            dim_feedforward=config["hidden_size"] * config["dim_feedforward_multiplier"] ,
+            dropout=config["dropout_2"],
             activation='relu',
             batch_first=True
         )
 
-        self.transformer_encoder = nn.TransformerEncoder(
-            self.encoder_layer, 
-            num_layers=config["num_transformer_layers"]
-        )
-
         self.linear = nn.Linear(
-            config["hidden_sizes"], 
+            config["hidden_size"], 
             config["output_size"]
         )
 
     def forward(self, x: Tensor) -> Tensor:
         x, _ = self.rnn(x)
-        x = self.transformer_encoder(x)
-
-        if self.config["use_mean"]:
-            last_step = x.mean(dim=1)  # Take the mean along the second axis (0-based indexing)
-        else:
-            last_step = x[:, -1, :]  # Take the last step
-
-        yhat = self.linear(last_step)
-        return yhat
-
-
-class TestGRUTransformer(nn.Module):
-    def __init__(
-        self,
-        config: Dict,
-    ) -> None:
-        super().__init__()        
-
-        self.rnn = nn.GRU(
-            input_size=13,
-            dropout=0.1,
-            num_layers=2,
-            batch_first=True,
-            hidden_size=13,
-        )
-
-        self.encoder_layer = nn.TransformerEncoderLayer(
-            d_model=13, 
-            nhead=13,
-            dropout=0.2,
-            activation='relu',
-            batch_first=True
-        )
-
-        self.transformer_encoder = nn.TransformerEncoder(
-            self.encoder_layer, 
-            num_layers=4
-        )
-
-        self.linear = nn.Linear(
-            13, 
-            20
-        )
-
-    def forward(self, x: Tensor) -> Tensor:
-        x, _ = self.rnn(x)
-        x, _ = self.attention(x.clone(), x.clone(), x)
-
-        x, _ = self.rnn(x)
-        x = self.transformer_encoder(x)
+        batch_size, sequence_length, _ = x.size()
+        tgt = torch.zeros((batch_size, sequence_length, self.config["hidden_size"]), device=x.device)
+        x = self.transformer(x, tgt=tgt)
         last_step = x[:, -1, :]  # Take the last step
         yhat = self.linear(last_step)
         return yhat

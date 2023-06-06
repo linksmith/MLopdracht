@@ -99,36 +99,30 @@ class BaseSearchSpace(BaseModel):
 # this is what ray will use to create configs
 class SearchSpace(BaseSearchSpace):
     hidden_size: Union[int, SAMPLE_INT] = tune.randint(16, 128)
-    dropout: Union[float, SAMPLE_FLOAT] = tune.uniform(0.0, 0.3)
+    dropout_1: Union[float, SAMPLE_FLOAT] = tune.uniform(0.0, 0.3)
     num_layers: Union[int, SAMPLE_INT] = tune.randint(2, 5)
-    use_mean: Union[bool, SAMPLE_CATEGORICAL] = tune.choice([True, False]) # ign
-
+    
 
 # this is what ray will use to create configs
 class SearchSpaceAttention(SearchSpace):
-    size_and_heads: Union[str, SAMPLE_CATEGORICAL]
-    dropout_attention: Union[float, SAMPLE_FLOAT] = tune.uniform(0.0, 0.3)
-
-    @staticmethod
-    def get_size_and_heads(lower: int, upper: int, step: int):
-        # Generate list of divisible hidden_size between lower and upper (inclusive)
-        sizes = [size for size in range(lower, upper + 1, step) if size % 4 == 0]
-        choices = [f"{size}_{size // 4}" for size in sizes]
-        return choices
+    num_heads: Union[str, SAMPLE_CATEGORICAL] = tune.choice([2, 4, 8, 16])
+    hidden_size: Union[int, SAMPLE_INT] = tune.qrandint(32, 256, 16)
 
 
 # this is what ray will use to create configs
-class SearchSpaceTransformer(SearchSpace):
-    num_heads: Union[int, SAMPLE_CATEGORICAL] = tune.choice([13, 26, 39]) 
+class SearchSpaceGRUAttention(SearchSpaceAttention):
+    dropout_2: Union[float, SAMPLE_FLOAT] = tune.uniform(0.0, 0.3)
+
+
+# this is what ray will use to create configs
+class SearchSpaceTransformer(SearchSpaceAttention):
+    dim_feedforward_multiplier: Union[int, SAMPLE_INT] = tune.randint(1, 3)
     num_transformer_layers: Union[int, SAMPLE_INT] = tune.randint(4, 8)
 
 
 # this is what ray will use to create configs
-class SearchSpaceGRUTransformer(SearchSpace):
-    hidden_sizes: Union[int, SAMPLE_CATEGORICAL] = tune.choice([13, 26, 39]) 
-    num_heads: Union[int, SAMPLE_CATEGORICAL] = tune.choice([13, 26, 39]) 
-    num_transformer_layers: Union[int, SAMPLE_INT] = tune.randint(4, 8)
-    dropout_gru: Union[float, SAMPLE_FLOAT] = tune.uniform(0.0, 0.3)
+class SearchSpaceGRUTransformer(SearchSpaceTransformer):
+    dropout_2: Union[float, SAMPLE_FLOAT] = tune.uniform(0.0, 0.3)
 
 
 class BaseSettings(BaseModel):
@@ -137,7 +131,9 @@ class BaseSettings(BaseModel):
 
 cwd = Path(__file__).parent
 cwd = (cwd / "../").resolve()
-print('a')
+# print('ab')
+from datetime import datetime
+print(datetime.now())
 
 class GeneralSettings(BaseSettings):
     data_dir = cwd / "data/raw"
