@@ -172,6 +172,7 @@ def get_gru_transformer_search_space():
         num_transformer_layers = tune.randint(2, 6)
     )
 
+
 def get_hyperband_for_bohb_scheduler():
     return HyperBandForBOHB(
         time_attr="training_iteration",
@@ -197,7 +198,7 @@ def set_mlflow(config, model_type):
     mlflow.log_params(config.__dict__)
 
 
-def run_ray(config, model_class):
+def run_ray(config, model_class, model_type, epochs):
     with mlflow.start_run():     
         ray.init()
 
@@ -226,7 +227,7 @@ def run_ray(config, model_class):
 # Define argument parser
 parser = argparse.ArgumentParser(description='Model Type for Hyperparameter Tuning')
 parser.add_argument('--model_type', type=str, required=True, 
-                    help='Type of model to use for hyperparameter tuning. Options: "All", "GRU", "LSTM", "Attention", "GRUAttention", "Transformer", "GRUTransformer"')
+                    help='Type of model to use for hyperparameter tuning. Options: "All", "GRU", "LSTM", "Attention", "GRUAttention", "Transformer", "GRUTransformer", "TrainGRUTransformer"')
 parser.add_argument('--epochs', type=int, required=False, default=50,
                     help='Number of epochs for training.')
 args = parser.parse_args()
@@ -256,9 +257,9 @@ if __name__ == "__main__":
         run_ray(transformer_config, transformer_model_class)
 
         gru_transformer_config, gru_transformer_model_class = get_config_and_model_class("GRUTransformer")
-        run_ray(gru_transformer_config, gru_transformer_model_class)
-   
+        run_ray(gru_transformer_config, gru_transformer_model_class)   
+
     else:
         config, model_class = get_config_and_model_class(model_type)
-        run_ray(config, model_class)
+        run_ray(config, model_class, model_type, epochs)
 

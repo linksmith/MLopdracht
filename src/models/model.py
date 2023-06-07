@@ -5,7 +5,7 @@ from torch import nn
 Tensor = torch.Tensor
 
 
-class GRU(nn.Module):
+class LSTM(nn.Module):
     def __init__(
         self,
         config: Dict,
@@ -13,7 +13,7 @@ class GRU(nn.Module):
         super().__init__()
         self.config = config
 
-        self.rnn = nn.GRU(
+        self.rnn = nn.LSTM(
             input_size=config["input_size"],
             hidden_size=config["hidden_size"],
             dropout=config["dropout_1"],
@@ -33,7 +33,7 @@ class GRU(nn.Module):
         return yhat
 
 
-class LSTM(nn.Module):
+class GRU(nn.Module):
     def __init__(
         self,
         config: Dict,
@@ -41,7 +41,7 @@ class LSTM(nn.Module):
         super().__init__()
         self.config = config
 
-        self.rnn = nn.LSTM(
+        self.rnn = nn.GRU(
             input_size=config["input_size"],
             hidden_size=config["hidden_size"],
             dropout=config["dropout_1"],
@@ -186,6 +186,48 @@ class GRUTransformer(nn.Module):
             num_decoder_layers=config["num_transformer_layers"],
             dim_feedforward=config["hidden_size"] * config["dim_feedforward_multiplier"] ,
             dropout=config["dropout_2"],
+            activation='relu',
+            batch_first=True
+        )
+
+        self.linear = nn.Linear(
+            config["hidden_size"], 
+            config["output_size"]
+        )
+
+    def forward(self, x: Tensor) -> Tensor:
+        x, _ = self.rnn(x)
+        batch_size, sequence_length, _ = x.size()
+        tgt = torch.zeros((batch_size, sequence_length, self.config["hidden_size"]), device=x.device)
+        x = self.transformer(x, tgt=tgt)
+        last_step = x[:, -1, :]  # Take the last step
+        yhat = self.linear(last_step)
+        return yhat
+    
+print('GRUTransformer')
+class GRUTransformer2(nn.Module):
+    def __init__(
+        self,
+        config: Dict,
+    ) -> None:
+        super().__init__()        
+        self.config = config
+
+        self.rnn = nn.GRU(
+            input_size=config["input_size"],
+            dropout=0.05164594234137071,
+            num_layers=config["num_layers"],
+            hidden_size=config["hidden_size"],
+            batch_first=True,
+        )
+
+        self.transformer = nn.Transformer(
+            d_model=config["hidden_size"],
+            nhead=config["num_heads"],
+            num_encoder_layers=config["num_transformer_layers"],
+            num_decoder_layers=config["num_transformer_layers"],
+            dim_feedforward=config["hidden_size"] * config["dim_feedforward_multiplier"] ,
+            dropout=0.07867236925135043,
             activation='relu',
             batch_first=True
         )
