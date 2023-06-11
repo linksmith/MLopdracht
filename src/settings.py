@@ -32,11 +32,13 @@ presets = Settings(
     datadir=root / "data/raw",
     testurl=cast(
         HttpUrl,
-        "https://archive.ics.uci.edu/ml/machine-learning-databases/00195/Test_Arabic_Digit.txt",  # noqa N501
+        "https://raw.githubusercontent.com/raoulg/data_assets/main/ArabicTest.txt",
+        # "https://archive.ics.uci.edu/ml/machine-learning-databases/00195/Test_Arabic_Digit.txt",  # noqa N501
     ),
     trainurl=cast(
         HttpUrl,
-        "https://archive.ics.uci.edu/ml/machine-learning-databases/00195/Train_Arabic_Digit.txt",  # noqa N501
+        "https://raw.githubusercontent.com/raoulg/data_assets/main/ArabicTrain.txt",
+        # "https://archive.ics.uci.edu/ml/machine-learning-databases/00195/Train_Arabic_Digit.txt",  # noqa N501
     ),
     testfile=Path("ArabicTest.txt"),
     trainfile=Path("ArabicTrain.txt"),
@@ -125,19 +127,6 @@ class SearchSpaceGRUTransformer(SearchSpaceTransformer):
     dropout_2: Union[float, SAMPLE_FLOAT] = tune.uniform(0.0, 0.3)
 
 
-class SearchSpaceGRUTransformerConfig(BaseModel):
-    input_size: int = 13
-    output_size: int = 20
-    hidden_size: int = 96
-    dropout_1: float = 0.05164594234137071
-    num_layers: int = 5
-    num_heads: int = 2
-    dim_feedforward_multiplier: int = 2
-    num_transformer_layers: int = 3
-    dropout_2: float = 0.07867236925135043
-    tune_dir: Path = Path("models/ray2").resolve()
-    data_dir: Path = presets.datadir.resolve()
-
 class BaseSettings(BaseModel):
     data_dir: Path
 
@@ -147,7 +136,6 @@ cwd = (cwd / "../").resolve()
 # print('ab')
 from datetime import datetime
 print(datetime.now())
-print("aasdf")
 
 class GeneralSettings(BaseSettings):
     data_dir = cwd / "data/raw"

@@ -9,7 +9,7 @@ import torch
 from loguru import logger
 from torch.nn.utils.rnn import pad_sequence
 
-from src import data_tools
+from src.data import data_tools
 from src.settings import Settings
 
 
@@ -98,7 +98,8 @@ class ArabicDataset(BaseDataset):
         # there are 330 males and 330 females, 10 times.
         g = np.tile(np.repeat(["m", "f"], blocksize // 2), 10)
         labels = ["".join([str(a), str(b)]) for a, b in zip(d, g)]
-        assert len(labels) == len(self.data)
+        assert len(labels) == len(self.data), f"{len(labels)} != {len(self.data)}"
+        # assert len(labels) == len(self.data)
         return labels
 
 

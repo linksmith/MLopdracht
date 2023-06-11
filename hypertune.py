@@ -1,5 +1,5 @@
 import random
-from src import datasets
+from src.data import datasets
 from src.models import model as m, metrics, train_model
 from src.settings import SearchSpace, SearchSpaceGRUAttention, SearchSpaceAttention, SearchSpaceTransformer, SearchSpaceGRUTransformer, TrainerSettings, presets
 from pathlib import Path
@@ -235,6 +235,7 @@ args = parser.parse_args()
 
 if __name__ == "__main__":
     print(datetime.now())
+    print(f"Model Type: {args.model_type}")
     model_type = args.model_type
     epochs = args.epochs
 

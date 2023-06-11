@@ -17,7 +17,7 @@ from torch.utils.tensorboard import SummaryWriter
 from torchvision.utils import make_grid
 from tqdm import tqdm
 
-from src import data_tools
+from src.data import data_tools
 from src.models.metrics import Metric
 from src.settings import TrainerSettings
 from src.typehinting import GenericModel
@@ -270,6 +270,8 @@ class TransformerTrainer:
         for epoch in tqdm(range(self.settings.epochs), colour="#1e4706"):
             train_loss = self.trainbatches()
             metric_dict, test_loss = self.evalbatches()
+            metric_dict["model_type"] = self.model.__class__.__name__
+
             self.report(epoch, train_loss, test_loss, metric_dict)
 
             if self.early_stopping:
@@ -293,8 +295,6 @@ class TransformerTrainer:
         train_steps = self.settings.train_steps
         for _ in tqdm(range(train_steps), colour="#1e4706"):
             x, y = next(iter(self.traindataloader))
-            # x = x.permute(1, 0, 2)  # Transpose the tensor to (sequence_length, batch_size, input_size)
-            # x = x.transpose(0, 1)  # Transpose again to (batch_size, sequence_length, input_size)
             self.optimizer.zero_grad()
             yhat = self.model(x)
             loss = self.loss_fn(yhat, y)
@@ -311,9 +311,6 @@ class TransformerTrainer:
         metric_dict: Dict[str, float] = {}
         for _ in range(valid_steps):
             x, y = next(iter(self.validdataloader))
-            # Transpose input for Transformer models
-            # x = x.permute(1, 0, 2)  # Transpose the tensor to (sequence_length, batch_size, input_size)
-            # x = x.transpose(0, 1)  # Transpose again to (batch_size, sequence_length, input_size)
             yhat = self.model(x)
             test_loss += self.loss_fn(yhat, y).detach().numpy()
             for m in self.settings.metrics:
@@ -599,3 +596,5 @@ def find_lr(
         lr *= update_step
         optimizer.param_groups[0]["lr"] = lr
     return log_lrs[10:-5], smooth_losses[10:-5]
+
+print("done")
