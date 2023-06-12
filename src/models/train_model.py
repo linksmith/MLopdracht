@@ -596,5 +596,3 @@ def find_lr(
         lr *= update_step
         optimizer.param_groups[0]["lr"] = lr
     return log_lrs[10:-5], smooth_losses[10:-5]
-
-print("done")
