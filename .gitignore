@@ -4,3 +4,5 @@ data/raw/*
 /logs
 /dev/notebooks/models/ray
 /dev/notebooks/models/ray2
+/dev/notebooks/mlruns
+.DS_Store
